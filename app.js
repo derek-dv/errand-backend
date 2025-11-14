@@ -30,6 +30,37 @@ app.use((req, res, next) => {
   }
 });
 
+
+app.get("/places/autocomplete", async (req, res) => {
+  const q = req.query.q;
+  const response = await fetch(
+    `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(q)}&key=AIzaSyC_xipol58KPZZ0CRDrnCxOkkR19U8CX_M`
+  );
+  const data = await response.json();
+  res.json(data);
+});
+
+app.get("/places/details", async (req, res) => {
+  try {
+    const placeId = req.query.place_id;
+    if (!placeId) {
+      return res.status(400).json({ error: "Missing 'place_id' parameter" });
+    }
+
+    const url = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(
+      placeId
+    )}&fields=formatted_address,geometry&key=AIzaSyC_xipol58KPZZ0CRDrnCxOkkR19U8CX_M`;
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    res.json(data);
+  } catch (error) {
+    console.error("Details proxy error:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // Routers
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/user", authenticate, userProfile);

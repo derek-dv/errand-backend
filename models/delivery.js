@@ -55,13 +55,15 @@ const deliverySchema = new mongoose.Schema(
     vehicleType: {
       type: String,
       enum: ["scooter", "motorcycle", "car", "van"],
-      required: true,
+      default: "scooter",
+      // required: true,
     },
 
     packageSize: {
       type: String,
       enum: ["small", "medium", "heavy", "extra-heavy"],
-      required: true,
+      pault: "small",
+      // required: true,
     },
 
     verifiedDelivery: { type: Boolean, default: false },

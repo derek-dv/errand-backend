@@ -121,7 +121,7 @@ exports.create = async (req, res) => {
       receiverDetails,
       vehicleType,
       scheduledTime,
-      packageSize,
+      packageSize: "small",
       verifiedDelivery: !!verifiedDelivery,
       priority: !!priority,
       distanceKm: Number(distanceKm.toFixed(2)),
@@ -150,6 +150,7 @@ exports.create = async (req, res) => {
         clientSecret,
       }
     );
+    console.log("Delivery created:", delivery);
 
     return res.status(201).json({
       status: true,
@@ -571,6 +572,128 @@ exports.confirmLocation = async (req, res) => {
     });
   }
 };
+
+
+exports.getAssigned = async (req, res) => {
+  try {
+    const senderId = req.user.id; 
+
+    const deliveries = await Delivery.find({
+      senderId,
+      driverId: { $ne: null } 
+    })
+      .populate("driverId", "firstName lastName email phone rating vehicleType") 
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json({
+      status: true,
+      deliveries,
+    });
+  } catch (error) {
+    console.error("Get assigned deliveries error:", error);
+    return res.status(500).json({
+      status: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+// @desc Get single delivery details
+// @route GET /api/deliveries/:id
+// @access Private (Admin / Dispatcher / Driver if assigned)
+exports.getDeliveryDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Validate ID format
+    if (!id || id.length !== 24) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid delivery ID format"
+      });
+    }
+
+    const delivery = await Delivery.findById(id)
+      .populate({
+        path: "driverId",
+        select: "fullName email phone city vehicleType avatar earnType"
+      })
+      .populate({
+        path: "senderId",
+        select: "fullName email phone"
+      });
+
+    if (!delivery) {
+      return res.status(404).json({
+        success: false,
+        message: "Delivery not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      delivery
+    });
+  } catch (error) {
+    console.error("Error fetching delivery details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error"
+    });
+  }
+};
+
+
+
+// @desc Get all picked-up deliveries (driver populated)
+// @route GET /api/deliveries/picked-up
+// @access Private (Admin / Dispatcher)
+exports.getPickedUpDeliveries = async (req, res) => {
+  try {
+    const deliveries = await Delivery.find({ status: "picked_up" })
+      .populate({
+        path: "driverId",
+        select: "fullName email phone city vehicleType avatar"
+      })
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: deliveries.length,
+      deliveries
+    });
+  } catch (error) {
+    console.error("Error fetching picked-up deliveries:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+// @desc Get all enroute deliveries (driver populated)
+// @route GET /api/deliveries/enroute
+// @access Private (Admin / Dispatcher)
+exports.getEnrouteDeliveries = async (req, res) => {
+  try {
+    const deliveries = await Delivery.find({ status: "in_progress" })
+      .populate({
+        path: "driverId",
+        select: "fullName email phone city vehicleType avatar"
+      })
+      .sort({ updatedAt: -1 });
+
+    return res.status(200).json({
+      success: true,
+      count: deliveries.length,
+      deliveries
+    });
+  } catch (error) {
+    console.error("Error fetching enroute deliveries:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
 
 exports.getOptions = async (req, res) => {
   try {

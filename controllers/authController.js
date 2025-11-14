@@ -15,12 +15,15 @@ exports.sendOtp = async (req, res) => {
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   await Otp.create({ phone: phoneNumber, code, expiresAt });
+  console.log(code);
+  
 
   try {
     const client = require("twilio")(
       process.env.TWILIO_ACCOUNT_SID,
       process.env.TWILIO_AUTH_TOKEN
     );
+    console.log("Sending OTP", code, "to", phoneNumber);
     await client.messages.create({
       body: `Your Aerrand OTP code is ${code}`,
       from: process.env.TWILIO_PHONE,
