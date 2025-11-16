@@ -1,4 +1,5 @@
 const Delivery = require("../models/delivery");
+const Driver = require("../models/driver");
 const { routeTotals } = require("../services/maps");
 const { computePrice } = require("../services/pricing");
 const { createPaymentIntent } = require("../stripe");
@@ -580,7 +581,8 @@ exports.getAssigned = async (req, res) => {
 
     const deliveries = await Delivery.find({
       senderId,
-      driverId: { $ne: null } 
+      driverId: { $ne: null } ,
+      status: { $in: ["assigned", "in_progress"] },
     })
       .populate("driverId", "firstName lastName email phone rating vehicleType") 
       .sort({ createdAt: -1 });
